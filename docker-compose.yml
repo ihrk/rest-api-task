@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:14
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: rest_api_task
+    ports:
+      - "5432:5432"
+
+  rest_api_test:
+    container_name: rest_api_test
+    image: golang:latest
+    working_dir: /go/src/rest-api-task
+    volumes:
+      - './:/go/src/rest-api-task'
+    command: [ "make", "test-local" ]
+    environment:
+      DB_HOST: postgres
+    depends_on:
+      - "postgres"
+
+  rest_api_lint:
+    container_name: rest_api_lint
+    image: golangci/golangci-lint:v1.46.2
+    working_dir: /go/src/rest-api-task
+    volumes:
+      - './:/go/src/rest-api-task'
+    command: [ "make", "lint-local" ]
+
+  rest_api:
+    container_name: rest_api
+    build: ./
+    command: [ "./main" ]
+    environment:
+      DB_HOST: postgres
+    ports:
+      - 8080:8080
+    depends_on:
+      - "postgres"
